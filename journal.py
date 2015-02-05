@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 import os
 import logging
-import psycopg2
 from pyramid.config import Configurator
 from pyramid.session import SignedCookieSessionFactory
 from pyramid.view import view_config
 from waitress import serve
+import psycopg2
 from contextlib import closing
-
+from pyramid.events import NewRequest, subscriber
+import datetime
 
 DB_SCHEMA = """
 CREATE TABLE IF NOT EXISTS entries (
@@ -18,13 +19,21 @@ CREATE TABLE IF NOT EXISTS entries (
 )
 """
 
+INSERT_ENTRY = """
+INSERT INTO entries (title, text, created) VALUES (%s, %s, %s)
+"""
+DB_ENTRIES_LIST = """
+SELECT id, title, text, created FROM entries ORDER BY created DESC
+"""
+
+
 logging.basicConfig()
 log = logging.getLogger(__file__)
 
 
-@view_config(route_name='home', renderer='string')
-def home(request):
-    return "Hello World"
+# @view_config(route_name='home', renderer='string')
+# def home(request):
+#     return "Hello World"
 
 
 def connect_db(settings):
@@ -34,7 +43,6 @@ def connect_db(settings):
 
 def init_db():
     """Create database dables defined by DB_SCHEMA
-
     Warning: This function will not update existing table definitions
     """
     settings = {}
@@ -44,6 +52,28 @@ def init_db():
     with closing(connect_db(settings)) as db:
         db.cursor().execute(DB_SCHEMA)
         db.commit()
+
+
+@subscriber(NewRequest)
+def open_connection(event):
+    request = event.request
+    settings = request.registry.settings
+    request.db = connect_db(settings)
+    request.add_finished_callback(close_connection)
+
+
+def close_connection(request):
+    """close the database connection for this request
+    If there has been an error in the processing of the request, abort any
+    open transactions.
+    """
+    db = getattr(request, 'db', None)
+    if db is not None:
+        if request.exception is not None:
+            db.rollback()
+        else:
+            db.commit()
+        request.db.close()
 
 
 def main():
@@ -62,10 +92,29 @@ def main():
         settings=settings,
         session_factory=session_factory
     )
+    config.include('pyramid_jinja2')
     config.add_route('home', '/')
     config.scan()
     app = config.make_wsgi_app()
     return app
+
+
+def write_entry(request):
+    """write a single entry to the database"""
+    title = request.params.get('title', None)
+    text = request.params.get('text', None)
+    created = datetime.datetime.utcnow()
+    request.db.cursor().execute(INSERT_ENTRY, [title, text, created])
+
+
+@view_config(route_name='home', renderer='templates/list.jinja2')
+def read_entries(request):
+    """return a list of all entries as dicts"""
+    cursor = request.db.cursor()
+    cursor.execute(DB_ENTRIES_LIST)
+    keys = ('id', 'title', 'text', 'created')
+    entries = [dict(zip(keys, row)) for row in cursor.fetchall()]
+    return {'entries': entries}
 
 
 if __name__ == '__main__':
