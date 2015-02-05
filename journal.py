@@ -1,16 +1,14 @@
 # -*- coding: utf-8 -*-
 import os
 import logging
-import psycopg2
-import datetime
-
 from pyramid.config import Configurator
 from pyramid.session import SignedCookieSessionFactory
 from pyramid.view import view_config
 from waitress import serve
+import psycopg2
 from contextlib import closing
 from pyramid.events import NewRequest, subscriber
-
+import datetime
 
 DB_SCHEMA = """
 CREATE TABLE IF NOT EXISTS entries (
@@ -20,9 +18,15 @@ CREATE TABLE IF NOT EXISTS entries (
     created TIMESTAMP NOT NULL
 )
 """
+
 INSERT_ENTRY = """
 INSERT INTO entries (title, text, created) VALUES (%s, %s, %s)
 """
+
+READ_ENTRIES = """
+SELECT id, title, text, created FROM entries
+"""
+
 
 logging.basicConfig()
 log = logging.getLogger(__file__)
@@ -40,12 +44,11 @@ def connect_db(settings):
 
 def init_db():
     """Create database dables defined by DB_SCHEMA
-
     Warning: This function will not update existing table definitions
     """
     settings = {}
     settings['db'] = os.environ.get(
-        'DATABASE_URL', 'dbname=learning_journal user=jakeanderson'
+        'DATABASE_URL', 'dbname=learning_journal user=chatzis'
     )
     with closing(connect_db(settings)) as db:
         db.cursor().execute(DB_SCHEMA)
@@ -62,7 +65,6 @@ def open_connection(event):
 
 def close_connection(request):
     """close the database connection for this request
-
     If there has been an error in the processing of the request, abort any
     open transactions.
     """
@@ -75,22 +77,11 @@ def close_connection(request):
         request.db.close()
 
 
-def write_entry(request):
-    """write a single entry to the database"""
-    title = request.params.get('title', None)
-    text = request.params.get('text', None)
-    created = datetime.datetime.utcnow()
-    request.db.cursor().execute(INSERT_ENTRY, [title, text, created])
-
-
 def main():
     """Create a configured wsgi app"""
     settings = {}
     settings['reload_all'] = os.environ.get('DEBUG', True)
     settings['debug_all'] = os.environ.get('DEBUG', True)
-    settings['db'] = os.environ.get(
-        'DATABASE_URL', 'dbname=learning_journal user=jakeanderson'
-    )
     # secret value for session signing:
     secret = os.environ.get('JOURNAL_SESSION_SECRET', 'itsaseekrit')
     session_factory = SignedCookieSessionFactory(secret)
@@ -99,10 +90,36 @@ def main():
         settings=settings,
         session_factory=session_factory
     )
+    config.include('pyramid_jinja2')
     config.add_route('home', '/')
     config.scan()
     app = config.make_wsgi_app()
     return app
+
+    settings['reload_all'] = os.environ.get('DEBUG', True)  # <- THERE NOW
+    settings['debug_all'] = os.environ.get('DEBUG', True)  # <- THERE NOW
+    # ADD THIS  vvv
+    settings['db'] = os.environ.get(
+        'DATABASE_URL', 'dbname=learning_journal user=chatzis'
+    )
+
+
+def write_entry(request):
+    """Add an entry to the database"""
+    title = request.params.get('title')
+    text = request.params.get('text')
+    created = datetime.datetime.utcnow()
+    request.db.cursor().execute(INSERT_ENTRY, [title, text, created])
+
+
+def read_entries(request):
+    """Read entries in the database"""
+    cursor = request.db.cursor()
+    cursor.execute(READ_ENTRIES)
+    results = cursor.fetchall()
+    keys = ('id', 'title', 'text', 'created')
+    entries = [dict(zip(keys, item)) for item in results]
+    return {'entries': entries}
 
 
 if __name__ == '__main__':
