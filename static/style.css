@@ -55,29 +55,42 @@ footer {
     background-color: #558C89;
     border-radius: 10px;
     }
-/*main:after{
+main:after{
     content:"";
     display:table;
     clear:both}
 main article{
     margin-bottom:1em;
-    padding-left:0.5em}*/
-/*main article h3{margin-top:0}
+    padding-left:0.5em
+    }
+main article h3{
+    margin-top:0;
+    }
 main article .entry_body{
-    margin:0.5em}
+    margin:0.5em;
+    }
 main aside{float:right}
 main aside .field{
-    margin-bottom:1em}
+    margin-bottom:1em;
+    }
 main aside .field input,
 main aside .field label,
-main aside .field textarea{
-    vertical-align:top}
+main aside .field textarea {
+    vertical-align:top;
+    padding: 5px;
+    text-align: left;
+    width:500px;
+    height:100px;
+    border-radius: 10px;
+    }
 main aside .field label{
     display:inline-block;
     width:15%;
     padding-top:2px}
 main aside .field input,
 main aside .field textarea{
-    width:83%}
+    width:83%;
+    }
 main aside .control_row input{
-    margin-left:16%}*/
+    margin-left:16%;
+    }
