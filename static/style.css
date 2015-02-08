@@ -68,8 +68,12 @@ main article h3{
     }
 main article .entry_body{
     margin:0.5em;
+    width: 66%;
     }
-main aside{float:right}
+main aside{
+    float:right;
+    width: 30%;
+    }
 main aside .field{
     margin-bottom:1em;
     }
