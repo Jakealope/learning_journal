@@ -11,6 +11,7 @@
   <body>
     <header>
       <aside id="user-controls">
+       <h1>My Python Journal</h1>
         <ul>
           {% if not request.authenticated_userid %}
           <li><a href="{{ request.route_url('login') }}">log in</a></li>
@@ -26,7 +27,7 @@
       </nav>
     </header>
     <main>
-      <h1>My Python Journal</h1>
+      
       <section id="content">
         {% block body %}{% endblock %}
       </section>
