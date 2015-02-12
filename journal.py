@@ -154,7 +154,7 @@ def read_entries(request):
     keys = ('id', 'title', 'text', 'created')
     entries = [dict(zip(keys, row)) for row in cursor.fetchall()]
     for e in entries:
-        e['text'] = markdown.markdown(e['text'], extentions=['codehilite', 'fenced_code'])
+        e['text'] = markdown.markdown(e['text'], extensions=['codehilite', 'fenced_code'])
     return {'entries': entries}
 
 
