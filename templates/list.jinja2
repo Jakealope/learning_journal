@@ -20,13 +20,13 @@
   <h2>Entries</h2>
   {% for entry in entries %}
   <article class="entry" id="entry={{entry.id}}">
-    <h3>{{ entry.title }}</h3>
+    <a href="/detail/{{ entry.id }}"><h1 class="headingLink">{{ entry.title }}</h1></a>
     <p class="dateline">{{ entry.created.strftime('%b. %d, %Y') }}
-    <div class="entry_body">
+    <div>
       {{ entry.text|markdown|safe }}
       </br>
       {% if request.authenticated_userid %}
-      edit link
+      <a href="/edit/{{ entry.id }}">Edit Post</a></br>
       </br>
       {% endif %}
     </div>

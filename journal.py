@@ -198,7 +198,7 @@ def edit_entry(request):
 
 
 def markd(input):
-    return markdown.markdown(input, extension=['codehilite'])
+    return markdown.markdown(input, extension=['CodeHilite'])
 
 
 @view_config(route_name='login', renderer="templates/login.jinja2")
