@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
-import os
+from contextlib import closing
+from pyramid import testing
 import pytest
 import datetime
-
-from pyramid import testing
-from journal import DB_SCHEMA
-from journal import connect_db
-from contextlib import closing
-from journal import INSERT_ENTRY
+import os
+from psycopg2 import IntegrityError
+from webtest.app import AppError
 from cryptacular.bcrypt import BCRYPTPasswordManager
+
+from journal import connect_db
+from journal import DB_SCHEMA
+from journal import INSERT_ENTRY
 
 
 TEST_DSN = 'dbname=test_learning_journal user=jakeanderson'
@@ -70,33 +72,6 @@ def req_context(db, request):
         clear_entries(settings)
 
 
-@pytest.fixture(scope='function')
-def app(db):
-    from journal import main
-    from webtest import TestApp
-    os.environ['DATABASE_URL'] = TEST_DSN
-    app = main()
-    return TestApp(app)
-
-
-@pytest.fixture(scope='function')
-def entry(db, request):
-    """provide a single entry in the database"""
-    settings = db
-    now = datetime.datetime.utcnow()
-    expected = ('Test Title', 'Test Text', now)
-    with closing(connect_db(settings)) as db:
-        run_query(db, INSERT_ENTRY, expected, False)
-        db.commit()
-
-    def cleanup():
-        clear_entries(settings)
-
-    request.addfinalizer(cleanup)
-
-    return expected
-
-
 def test_write_entry(req_context):
     from journal import write_entry
     fields = ('title', 'text')
@@ -116,6 +91,56 @@ def test_write_entry(req_context):
     actual = rows[0]
     for idx, val in enumerate(expected):
         assert val == actual[idx]
+
+
+def test_write_entry_not_string(req_context):
+    # 5 gets turned into a string, None throws an integrity error
+    from journal import write_entry
+    fields = ('title', 'text')
+    expected = (5, None)
+    req_context.params = dict(zip(fields, expected))
+
+    # assert that there are no entries when we start
+    rows = run_query(req_context.db, "SELECT * FROM entries")
+    assert len(rows) == 0
+
+    with pytest.raises(IntegrityError):
+        result = write_entry(req_context)
+
+
+def test_write_entry_wrong_columns(req_context):
+    # throws integrity error for not writing into title and text
+    from journal import write_entry
+    fields = ('bob', 'hope')
+    expected = ('some text', 'more text')
+    req_context.params = dict(zip(fields, expected))
+
+    # assert that there are no entries when we start
+    rows = run_query(req_context.db, "SELECT * FROM entries")
+    assert len(rows) == 0
+
+    with pytest.raises(IntegrityError):
+        result = write_entry(req_context)
+
+
+def test_write_entry_extra_columns(req_context):
+    # when we write into columns that aren't there, nothing happens
+    from journal import write_entry
+    fields = ('title', 'bob', 'text', 'hope')
+    expected = ('some text', 'more text', 'more', 'less')
+    req_context.params = dict(zip(fields, expected))
+
+    # assert that there are no entries when we start
+    rows = run_query(req_context.db, "SELECT * FROM entries")
+    assert len(rows) == 0
+
+    result = write_entry(req_context)
+    # manually commit so we can see the entry on query
+    req_context.db.commit()
+
+    rows = run_query(req_context.db, "SELECT title, text FROM entries")
+    assert len(rows) == 1
+    assert rows == [('some text', 'more')]
 
 
 def test_read_entries_empty(req_context):
@@ -145,12 +170,39 @@ def test_read_entries(req_context):
             assert key in entry
 
 
+@pytest.fixture(scope='function')
+def app(db):
+    from journal import main
+    from webtest import TestApp
+    os.environ['DATABASE_URL'] = TEST_DSN
+    app = main()
+    return TestApp(app)
+
+
 def test_empty_listing(app):
     response = app.get('/')
     assert response.status_code == 200
     actual = response.body
     expected = 'No entries here so far'
     assert expected in actual
+
+
+@pytest.fixture(scope='function')
+def entry(db, request):
+    """provide a single entry in the database"""
+    settings = db
+    now = datetime.datetime.utcnow()
+    expected = ('Test Title', 'Test Text', now)
+    with closing(connect_db(settings)) as db:
+        run_query(db, INSERT_ENTRY, expected, False)
+        db.commit()
+
+    def cleanup():
+        clear_entries(settings)
+
+    request.addfinalizer(cleanup)
+
+    return expected
 
 
 def test_listing(app, entry):
@@ -173,7 +225,15 @@ def test_post_to_add_view(app):
         assert expected in actual
 
 
-@pytest.fixture(scope='function')
+def test_post_to_add_view_using_get(app):
+    entry_data = {
+        'title': 'Hello there',
+        'text': 'This is a post',
+    }
+    with pytest.raises(AppError):
+        response = app.get('/add', params=entry_data, status='3*')
+
+
 @pytest.fixture(scope='function')
 def auth_req(request):
     manager = BCRYPTPasswordManager()
@@ -217,12 +277,12 @@ def test_do_login_missing_params(auth_req):
         with pytest.raises(ValueError):
             do_login(auth_req)
 
+
 INPUT_BTN = '<input type="submit" value="Share" name="Share"/>'
 
 
 def login_helper(username, password, app):
     """encapsulate app login for reuse in tests
-
     Accept all status codes so that we can make assertions in tests
     """
     login_data = {'username': username, 'password': password}

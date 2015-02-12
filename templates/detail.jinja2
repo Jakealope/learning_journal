@@ -1,0 +1,16 @@
+{% extends "base.jinja2" %}
+
+{% block body %}
+
+{% for entry in entries %}
+  <article class="entry" id="entry={{entry.id}}">
+    <h3>{{ entry.title }}</h3>
+    <p class="dateline">{{ entry.created.strftime('%b. %d, %Y') }}
+    <div class="entry_body">
+      {{ entry.text|markdown|safe }}
+      </br>
+    </div>
+  </article>
+{% endfor %}
+
+{% endblock %}
