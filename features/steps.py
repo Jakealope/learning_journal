@@ -119,7 +119,7 @@ def click_on_the_edit_button(step):
     assert response.status_code == 200
 
 
-@step('I am taken to the edit page')
+@step('I am taken to the edit page for that entry')
 def journal_edit_page(step):
     login_helper('admin', 'secret', world.app)
     response = world.app.get('/edit/1')
