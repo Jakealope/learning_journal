@@ -9,6 +9,13 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
     <link href="/static/style.css" rel="stylesheet" type="text/css">
     <link href="/static/codehilite.css" rel="stylesheet" type="text/css">
+    <script>
+    $( document ).ready( function() {
+      $("#edit_form").hide();
+    });
+
+
+    </script>
   </head>
   <body>
     <header>
@@ -29,7 +36,6 @@
       </nav>
     </header>
     <main>
-      
       <section id="content">
         {% block body %}{% endblock %}
       </section>
@@ -37,5 +43,11 @@
     <footer>
       <p>Created in the Code Fellows Python Dev Accelerator</p>
     </footer>
+    <script>
+      $("#btn_edit_post").on("click", function() {
+        $("#edit_form").show('slow');
+        $("#edit_detail").hide('slow');
+      });
+    </script>
   </body>
   </html>
