@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
+import jinja2
 import logging
+import markdown
 import datetime
 import psycopg2
 from waitress import serve
@@ -14,8 +16,7 @@ from pyramid.session import SignedCookieSessionFactory
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.authentication import AuthTktAuthenticationPolicy
 from pyramid.httpexceptions import HTTPFound, HTTPInternalServerError
-import markdown
-import jinja2
+
 here = os.path.dirname(os.path.abspath(__file__))
 
 DB_SCHEMA = """
