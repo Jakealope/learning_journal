@@ -37,7 +37,7 @@ DB_ENTRIES_LIST = """
 SELECT id, title, text, created FROM entries ORDER BY created DESC
 """
 UPDATE_ENTRY = """
-UPDATE entries SET (title, text, created) = (%s, %s, %s) WHERE id = %s
+UPDATE entries SET (title, text) = (%s, %s) WHERE id = %s
 """
 READ_ENTRY = """
 SELECT id, title, text, created FROM entries WHERE id = %s
@@ -124,7 +124,7 @@ def main():
     config.add_route('login', '/login')
     config.add_route('logout', '/logout')
     config.add_route('detail', '/detail/{id:\d+}')
-    config.add_route('edit', '/edit/{id:\d+}')
+    config.add_route('edit', '/edit')
     config.add_static_view('static', os.path.join(here, 'static'))
     config.scan()
     app = config.make_wsgi_app()
@@ -173,24 +173,26 @@ def detail_entry(request):
     return {'entry': entry}
 
 
-def update_entry(request, id):
+def update_entry(request):
     title = request.params.get('title')
     text = request.params.get('text')
-    created = datetime.datetime.utcnow()
-    request.db.cursor().execute(UPDATE_ENTRY, [title, text, created, id])
+    id = request.params.get('id')
+    request.db.cursor().execute(UPDATE_ENTRY, [title, text, id])
 
 
 @view_config(route_name='edit', request_method='POST', renderer='json')
 def edit(request):
     if request.authenticated_userid:
         try:
-            update_entry(request, id)
+            update_entry(request)
         except psycopg2.Error:
-            return HTTPInternalServerError
+            return HTTPInternalServerError()
         cursor = request.db.cursor()
-        cursor.execute(READ_ENTRY, (request.params.get('id', ''), ))
+        cursor.execute(READ_ENTRY, (request.params.get('id', None), ))
         keys = ('id', 'title', 'text', 'created')
         entry = dict(zip(keys, cursor.fetchone()))
+        entry['text'] = markdown.markdown(entry['text'], extensions=['codehilite', 'fenced_code'])
+        entry['created'] = entry['created'].strftime('%b. %d, %Y')
         return {'entry': entry}
     else:
         return HTTPForbidden()
