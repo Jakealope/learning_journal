@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import os
 import jinja2
 import logging
@@ -15,7 +16,8 @@ from cryptacular.bcrypt import BCRYPTPasswordManager
 from pyramid.session import SignedCookieSessionFactory
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.authentication import AuthTktAuthenticationPolicy
-from pyramid.httpexceptions import HTTPFound, HTTPInternalServerError
+from pyramid.httpexceptions import HTTPFound, HTTPInternalServerError, HTTPForbidden
+
 
 here = os.path.dirname(os.path.abspath(__file__))
 
@@ -178,24 +180,20 @@ def update_entry(request, id):
     request.db.cursor().execute(UPDATE_ENTRY, [title, text, created, id])
 
 
-@view_config(route_name='edit', request_method='POST')
+@view_config(route_name='edit', request_method='POST', renderer='json')
 def edit(request):
-    try:
-        id = request.matchdict['id']
-        update_entry(request, id)
-    except psycopg2.Error:
-        return HTTPInternalServerError
-    return HTTPFound(request.route_url('home'))
-
-
-@view_config(route_name='edit', renderer='templates/edit.jinja2')
-def edit_entry(request):
-    post_id = request.matchdict.get('id', None)
-    cursor = request.db.cursor()
-    cursor.execute(READ_ENTRY, [post_id])
-    keys = ('id', 'title', 'text', 'created')
-    entry = [dict(zip(keys, row)) for row in cursor.fetchall()]
-    return {'entry': entry}
+    if request.authenticated_userid:
+        try:
+            update_entry(request, id)
+        except psycopg2.Error:
+            return HTTPInternalServerError
+        cursor = request.db.cursor()
+        cursor.execute(READ_ENTRY, (request.params.get('id', ''), ))
+        keys = ('id', 'title', 'text', 'created')
+        entry = dict(zip(keys, cursor.fetchone()))
+        return {'entry': entry}
+    else:
+        return HTTPForbidden()
 
 
 def markd(input):
