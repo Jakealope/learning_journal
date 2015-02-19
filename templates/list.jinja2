@@ -30,9 +30,6 @@
   <div>
     {{ entry.text|markdown|safe }}
     </br>
-      {% if request.authenticated_userid %}
-        <a href="/edit/{{ entry.id }}" class="btn">Edit Post</a></br>
-      {% endif %}
     </br>
     <hr class="titleDivider">
   </div>

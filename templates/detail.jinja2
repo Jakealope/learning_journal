@@ -19,7 +19,7 @@
 
 {% if request.authenticated_userid %}
 <div id="edit_form">
-<form action="{{ request.route_url('edit', id=entry.id) }}" method="POST">
+<form action="" method="POST">
  <div>
    <label for="title">Title</label></br>
    <input type="text" size="30" name="title" id="title" value="{{ entry.title }}"/>
@@ -32,7 +32,8 @@
    <input id="btn_submit_edit" class="btn" type="submit" value="Share" name="Share"/>
  </div>
   <div><a href="https://twitter.com/share" class="twitter-share-button" data-via="JakeAnd3rson">Tweet</a>
-<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+</script>
   </div>
 
 </form>
