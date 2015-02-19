@@ -137,7 +137,7 @@ def write_entry(request):
     request.db.cursor().execute(INSERT_ENTRY, [title, text, created])
 
 
-@view_config(route_name='add', request_method='POST')
+@view_config(route_name='add', request_method='POST', renderer="JSON")
 def add_entry(request):
     try:
         write_entry(request)
