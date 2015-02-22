@@ -10,7 +10,7 @@
       {{ entry.text|markdown|safe }}
       </br>
       {% if request.authenticated_userid %}
-      <button id="btn_edit_post"class="btn">Edit Post</button></br>
+      <button class="btn edit_post">Edit Post</button></br>
       {% endif %}
     </div>
   </article>
@@ -28,12 +28,12 @@
    <textarea name="text" id="text" rows="10" cols="80">{{ entry.text }}</textarea>
  </div>
  <div>
-   <input id="btn_submit_edit" class="btn" type="submit" value="Share" name="Share"/>
+   <input class="btn submit_edit" type="submit" value="Share" name="Share"/>
  </div>
-<div><a href="https://twitter.com/share" class="twitter-share-button" data-via="JakeAnd3rson">Tweet</a>
+<!--<div><a href="https://twitter.com/share" class="twitter-share-button" data-via="JakeAnd3rson">Tweet</a>
 <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
 </script>
-  </div>
+  </div>-->
 
 </form>
 </div>
