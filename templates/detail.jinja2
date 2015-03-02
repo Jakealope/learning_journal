@@ -2,18 +2,42 @@
 
 {% block body %}
 
-{% for entry in entry %}
-  <article class="entry" id="entry={{entry.id}}">
+<div id="edit_detail">
+  <article class="entry" id="{{entry.id}}">
     <h3>{{ entry.title }}</h3>
-    <p class="dateline">{{ entry.created.strftime('%b. %d, %Y') }}
+    <p class="dateline">{{ entry.created }}
     <div class="entry_body">
-      {{ entry.text|markdown|safe }}
+      {{ entry.render_markdown()|safe }}
       </br>
       {% if request.authenticated_userid %}
-     <a href="/edit/{{ entry.id }}" class="btn">Edit Post</a></br>
-   {% endif %}
+      <button id="btn_edit_post"class="btn">Edit Post</button></br>
+      {% endif %}
     </div>
   </article>
-{% endfor %}
+</div>
+
+{% if request.authenticated_userid %}
+<div id="edit_form">
+<form action="" method="POST">
+ <div>
+   <label for="title">Title</label></br>
+   <input type="text" size="30" name="title" id="title" value="{{ entry.title }}"/>
+ </div>
+ <div>
+   <label for="text">Text</label></br>
+   <textarea name="text" id="text" rows="10" cols="80">{{ entry.text }}</textarea>
+ </div>
+ <div>
+   <input id="btn_submit_edit" class="btn" type="submit" value="Share" name="Share"/>
+ </div>
+<div><a href="https://twitter.com/share" class="twitter-share-button" data-via="JakeAnd3rson">Tweet</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+</script>
+  </div>
+
+</form>
+</div>
+{% endif %}
+
 
 {% endblock %}
