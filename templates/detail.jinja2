@@ -7,7 +7,7 @@
     <h3>{{ entry.title }}</h3>
     <p class="dateline">{{ entry.created }}
     <div class="entry_body">
-      {{ entry.text|markdown|safe }}
+      {{ entry.render_markdown()|safe }}
       </br>
       {% if request.authenticated_userid %}
       <button id="btn_edit_post"class="btn">Edit Post</button></br>
